@@ -104,7 +104,8 @@ class AdminZkClient(zkClient: KafkaZkClient,
                                 config: Properties,
                                 partitionReplicaAssignment: Map[Int, Seq[Int]],
                                 validate: Boolean = true,
-                                usesTopicId: Boolean = false): Unit = {
+                                usesTopicId: Boolean = false,
+                                maybeTopicId: Option[Uuid] = None): Unit = {
     if (validate)
       validateTopicCreate(topic, partitionReplicaAssignment, config)
 
@@ -116,7 +117,7 @@ class AdminZkClient(zkClient: KafkaZkClient,
 
     // create the partition assignment
     writeTopicPartitionAssignment(topic, partitionReplicaAssignment.map { case (k, v) => k -> ReplicaAssignment(v) },
-      isUpdate = false, usesTopicId)
+      isUpdate = false, usesTopicId, maybeTopicId)
   }
 
   /**
@@ -168,12 +169,18 @@ class AdminZkClient(zkClient: KafkaZkClient,
   }
 
   private def writeTopicPartitionAssignment(topic: String, replicaAssignment: Map[Int, ReplicaAssignment],
-                                            isUpdate: Boolean, usesTopicId: Boolean = false): Unit = {
+                                            isUpdate: Boolean, usesTopicId: Boolean = false,
+                                            maybeTopicId: Option[Uuid] = None): Unit = {
     try {
       val assignment = replicaAssignment.map { case (partitionId, replicas) => (new TopicPartition(topic,partitionId), replicas) }.toMap
 
       if (!isUpdate) {
-        val topicIdOpt = if (usesTopicId) Some(Uuid.randomUuid()) else None
+        val topicIdOpt = if (usesTopicId) {
+          maybeTopicId match {
+            case None => Some(Uuid.randomUuid())
+            case _ => maybeTopicId
+          }
+        } else None
         zkClient.createTopicAssignment(topic, topicIdOpt, assignment.map { case (k, v) => k -> v.replicas })
       } else {
         val topicIds = zkClient.getTopicIdsForTopics(Set(topic))

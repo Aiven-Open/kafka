@@ -255,6 +255,7 @@ public abstract class TopicCommand {
         private final Optional<Integer> replicationFactor;
         private final Map<Integer, List<Integer>> replicaAssignment;
         private final Properties configsToAdd;
+        private final Optional<Uuid> topicId;
 
         private final TopicCommandOptions opts;
 
@@ -265,6 +266,7 @@ public abstract class TopicCommand {
             replicationFactor = options.replicationFactor();
             replicaAssignment = options.replicaAssignment().orElse(Collections.emptyMap());
             configsToAdd = parseTopicConfigsToBeAdded(options);
+            topicId = options.topicId().map(Uuid::fromString);
         }
 
         public Boolean hasReplicaAssignment() {
@@ -478,7 +480,7 @@ public abstract class TopicCommand {
                 if (topic.hasReplicaAssignment()) {
                     newTopic = new NewTopic(topic.name, topic.replicaAssignment);
                 } else {
-                    newTopic = new NewTopic(topic.name, topic.partitions, topic.replicationFactor.map(Integer::shortValue));
+                    newTopic = new NewTopic(topic.topicId.orElse(null), topic.name, topic.partitions, topic.replicationFactor.map(Integer::shortValue));
                 }
 
                 Map<String, String> configsMap = topic.configsToAdd.stringPropertyNames().stream()

@@ -26,7 +26,7 @@ import kafka.utils.TestUtils._
 import kafka.utils.{Logging, TestUtils}
 import kafka.zk._
 import org.apache.kafka.admin.BrokerMetadata
-import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.{TopicPartition, Uuid}
 import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.common.errors.{InvalidReplicaAssignmentException, InvalidTopicException, TopicExistsException}
 import org.apache.kafka.common.metrics.Quota
@@ -55,6 +55,21 @@ class AdminZkClientTest extends QuorumTestHarness with Logging with RackAwareTes
   override def tearDown(): Unit = {
     TestUtils.shutdownServers(servers)
     super.tearDown()
+  }
+
+  @Test
+  def testCreateTopicWithId(): Unit = {
+    val brokers = List(0, 1, 2, 3, 4)
+    createBrokersInZk(zkClient, brokers)
+
+    val topicConfig = new Properties()
+
+    val assignment = Map(0 -> List(0, 1, 2),
+      1 -> List(1, 2, 3))
+    val uuid = Uuid.randomUuid
+    adminZkClient.createTopicWithAssignment("test", topicConfig, assignment, usesTopicId = true, maybeTopicId = Some(uuid))
+    val found = zkClient.getTopicIdsForTopics(Set("test"))
+    assertEquals(uuid, found("test"))
   }
 
   @Test

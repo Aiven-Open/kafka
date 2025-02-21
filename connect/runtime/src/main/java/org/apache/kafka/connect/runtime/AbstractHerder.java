@@ -599,6 +599,11 @@ public abstract class AbstractHerder implements Herder, TaskStatus.Listener, Con
         });
     }
 
+    @Override
+    public boolean validateConnectorNumberLimitNotExceeded() {
+        return worker.config().getMaxConnectorsCount() == 0 || connectors().size() < worker.config().getMaxConnectorsCount();
+    }
+
     /**
      * Build the {@link RestartPlan} that describes what should and should not be restarted given the restart request
      * and the current status of the connector and task instances.

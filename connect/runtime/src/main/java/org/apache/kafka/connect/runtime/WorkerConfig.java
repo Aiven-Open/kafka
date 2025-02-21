@@ -196,6 +196,10 @@ public class WorkerConfig extends AbstractConfig {
             + "to create topics automatically.";
     protected static final boolean TOPIC_CREATION_ENABLE_DEFAULT = true;
 
+    public static final String MAX_CONNECTORS_COUNT = "connect.max.connectors";
+    protected static final String MAX_CONNECTORS_COUNT_DOC = "Maximum number of connectors allowed to be instantiated. Defaults to 0 which means unlimited.";
+    protected static final int MAX_CONNECTORS_COUNT_DEFAULT = 0;
+
     /**
      * Get a basic ConfigDef for a WorkerConfig. This includes all the common settings. Subclasses can use this to
      * bootstrap their own ConfigDef.
@@ -264,6 +268,8 @@ public class WorkerConfig extends AbstractConfig {
                         Importance.MEDIUM, CONNECTOR_CLIENT_POLICY_CLASS_DOC)
                 .define(TOPIC_CREATION_ENABLE_CONFIG, Type.BOOLEAN, TOPIC_CREATION_ENABLE_DEFAULT, Importance.LOW,
                         TOPIC_CREATION_ENABLE_DOC)
+                .define(MAX_CONNECTORS_COUNT, Type.INT, MAX_CONNECTORS_COUNT_DEFAULT, Importance.LOW,
+                        MAX_CONNECTORS_COUNT_DOC)
                 // security support
                 .withClientSslSupport();
         addTopicTrackingConfig(result);
@@ -426,6 +432,10 @@ public class WorkerConfig extends AbstractConfig {
             kafkaClusterId = lookupKafkaClusterId(this);
         }
         return kafkaClusterId;
+    }
+
+    public int getMaxConnectorsCount() {
+        return getInt(MAX_CONNECTORS_COUNT);
     }
 
     @Override

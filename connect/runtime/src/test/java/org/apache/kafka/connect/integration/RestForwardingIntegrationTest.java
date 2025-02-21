@@ -162,6 +162,10 @@ public class RestForwardingIntegrationTest {
         DistributedConfig followerConfig = new DistributedConfig(baseWorkerProps(dualListener, followerSsl));
         DistributedConfig leaderConfig = new DistributedConfig(baseWorkerProps(dualListener, leaderSsl));
 
+        // Follower and leader have both room for connectors
+        when(followerHerder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
+        when(leaderHerder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
+
         // Follower worker setup
         RestClient followerClient = new RestClient(followerConfig);
         followerServer = new ConnectRestServer(null, followerClient, followerConfig.originals());

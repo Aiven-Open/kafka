@@ -140,6 +140,10 @@ public class ConnectorsResource {
     public Response createConnector(final @Parameter(hidden = true) @QueryParam("forward") Boolean forward,
                                     final @Context HttpHeaders headers,
                                     final CreateConnectorRequest createRequest) throws Throwable {
+        if (!herder.validateConnectorNumberLimitNotExceeded()) {
+            throw new ConnectRestException(Response.Status.CONFLICT, "Number of connectors is at maximum.");
+        }
+
         // Trim leading and trailing whitespaces from the connector name, replace null with empty string
         // if no name element present to keep validation within validator (NonEmptyStringWithoutControlChars
         // allows null values)

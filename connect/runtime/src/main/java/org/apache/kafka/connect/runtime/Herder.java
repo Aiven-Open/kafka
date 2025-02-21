@@ -246,6 +246,13 @@ public interface Herder {
     }
 
     /**
+     * Validate that configured maximum number of connectors is not exceeded.
+     * See {@link WorkerConfig#MAX_CONNECTORS_COUNT}
+     * @return True if there is still room for instantiating a connector. False if maximum is reached.
+     */
+    boolean validateConnectorNumberLimitNotExceeded();
+
+    /**
      * Restart the task with the given id.
      * @param id id of the task
      * @param cb callback to invoke upon completion

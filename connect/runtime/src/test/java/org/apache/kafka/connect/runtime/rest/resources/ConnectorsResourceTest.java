@@ -78,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
@@ -292,6 +293,7 @@ public class ConnectorsResourceTest {
     public void testCreateConnector() throws Throwable {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME, CONNECTOR_CONFIG,
@@ -299,12 +301,14 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(CONNECTOR_NAME), eq(body.config()), isNull(), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, body);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
     public void testCreateConnectorWithPausedInitialState() throws Throwable {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), CreateConnectorRequest.InitialState.PAUSED);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME, CONNECTOR_CONFIG,
@@ -312,12 +316,14 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(CONNECTOR_NAME), eq(body.config()), eq(TargetState.PAUSED), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, body);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
     public void testCreateConnectorWithStoppedInitialState() throws Throwable {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), CreateConnectorRequest.InitialState.STOPPED);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME, CONNECTOR_CONFIG,
@@ -325,12 +331,14 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(CONNECTOR_NAME), eq(body.config()), eq(TargetState.STOPPED), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, body);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
     public void testCreateConnectorWithRunningInitialState() throws Throwable {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), CreateConnectorRequest.InitialState.RUNNING);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME, CONNECTOR_CONFIG,
@@ -338,12 +346,14 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(CONNECTOR_NAME), eq(body.config()), eq(TargetState.STARTED), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, body);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
     public void testCreateConnectorNotLeader() throws Throwable {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackNotLeaderException(cb).when(herder)
@@ -352,12 +362,15 @@ public class ConnectorsResourceTest {
         when(restClient.httpRequest(eq(LEADER_URL + "connectors?forward=false"), eq("POST"), isNull(), eq(body), any()))
                 .thenReturn(new RestClient.HttpResponse<>(201, new HashMap<>(), new ConnectorInfo(CONNECTOR_NAME, CONNECTOR_CONFIG, CONNECTOR_TASK_NAMES, ConnectorType.SOURCE)));
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, body);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
     public void testCreateConnectorWithHeaders() throws Throwable {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
+
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         HttpHeaders httpHeaders = mock(HttpHeaders.class);
         expectAndCallbackNotLeaderException(cb)
@@ -366,17 +379,20 @@ public class ConnectorsResourceTest {
         when(restClient.httpRequest(eq(LEADER_URL + "connectors?forward=false"), eq("POST"), eq(httpHeaders), any(), any()))
                 .thenReturn(new RestClient.HttpResponse<>(202, new HashMap<>(), null));
         connectorsResource.createConnector(FORWARD, httpHeaders, body);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
     public void testCreateConnectorExists() {
         CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
             Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackException(cb, new AlreadyExistsException("already exists"))
             .when(herder).putConnectorConfig(eq(CONNECTOR_NAME), eq(body.config()), isNull(), eq(false), cb.capture());
         assertThrows(AlreadyExistsException.class, () -> connectorsResource.createConnector(FORWARD, NULL_HEADERS, body));
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
@@ -386,6 +402,7 @@ public class ConnectorsResourceTest {
         Map<String, String> inputConfig = getConnectorConfig(CONNECTOR_CONFIG_WITHOUT_NAME);
         final CreateConnectorRequest bodyIn = new CreateConnectorRequest(CONNECTOR_NAME_PADDING_WHITESPACES, inputConfig, null);
         final CreateConnectorRequest bodyOut = new CreateConnectorRequest(CONNECTOR_NAME, CONNECTOR_CONFIG, null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(bodyOut.name(), bodyOut.config(),
@@ -393,6 +410,7 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(bodyOut.name()), eq(bodyOut.config()), isNull(), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, bodyIn);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
@@ -402,6 +420,7 @@ public class ConnectorsResourceTest {
         Map<String, String> inputConfig = getConnectorConfig(CONNECTOR_CONFIG_WITHOUT_NAME);
         final CreateConnectorRequest bodyIn = new CreateConnectorRequest(CONNECTOR_NAME_ALL_WHITESPACES, inputConfig, null);
         final CreateConnectorRequest bodyOut = new CreateConnectorRequest("", CONNECTOR_CONFIG_WITH_EMPTY_NAME, null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(bodyOut.name(), bodyOut.config(),
@@ -409,6 +428,7 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(bodyOut.name()), eq(bodyOut.config()), isNull(), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, bodyIn);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
@@ -418,6 +438,7 @@ public class ConnectorsResourceTest {
         Map<String, String> inputConfig = getConnectorConfig(CONNECTOR_CONFIG_WITHOUT_NAME);
         final CreateConnectorRequest bodyIn = new CreateConnectorRequest(null, inputConfig, null);
         final CreateConnectorRequest bodyOut = new CreateConnectorRequest("", CONNECTOR_CONFIG_WITH_EMPTY_NAME, null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         final ArgumentCaptor<Callback<Herder.Created<ConnectorInfo>>> cb = ArgumentCaptor.forClass(Callback.class);
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(bodyOut.name(), bodyOut.config(),
@@ -425,6 +446,18 @@ public class ConnectorsResourceTest {
         ).when(herder).putConnectorConfig(eq(bodyOut.name()), eq(bodyOut.config()), isNull(), eq(false), cb.capture());
 
         connectorsResource.createConnector(FORWARD, NULL_HEADERS, bodyIn);
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
+    }
+
+    @Test
+    public void testCreateConnectorMaximumExceeded() throws Throwable {
+        CreateConnectorRequest body = new CreateConnectorRequest(CONNECTOR_NAME,
+                Collections.singletonMap(ConnectorConfig.NAME_CONFIG, CONNECTOR_NAME), null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(false);
+        ConnectRestException conflictException = assertThrows(ConnectRestException.class, () -> connectorsResource.createConnector(FORWARD, NULL_HEADERS, body));
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), conflictException.statusCode());
+        assertEquals("Number of connectors is at maximum.", conflictException.getMessage());
+        verify(herder, atMost(1)).validateConnectorNumberLimitNotExceeded();
     }
 
     @Test
@@ -535,6 +568,7 @@ public class ConnectorsResourceTest {
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME_SPECIAL_CHARS, CONNECTOR_CONFIG,
             CONNECTOR_TASK_NAMES, ConnectorType.SOURCE))
         ).when(herder).putConnectorConfig(eq(CONNECTOR_NAME_SPECIAL_CHARS), eq(body.config()), isNull(), eq(false), cb.capture());
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         String rspLocation = connectorsResource.createConnector(FORWARD, NULL_HEADERS, body).getLocation().toString();
         String decoded = new URI(rspLocation).getPath();
@@ -550,6 +584,7 @@ public class ConnectorsResourceTest {
         expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME_CONTROL_SEQUENCES1, CONNECTOR_CONFIG,
             CONNECTOR_TASK_NAMES, ConnectorType.SOURCE))
         ).when(herder).putConnectorConfig(eq(CONNECTOR_NAME_CONTROL_SEQUENCES1), eq(body.config()), isNull(), eq(false), cb.capture());
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
 
         String rspLocation = connectorsResource.createConnector(FORWARD, NULL_HEADERS, body).getLocation().toString();
         String decoded = new URI(rspLocation).getPath();
@@ -595,6 +630,7 @@ public class ConnectorsResourceTest {
         Map<String, String> connConfig = new HashMap<>();
         connConfig.put(ConnectorConfig.NAME_CONFIG, "mismatched-name");
         CreateConnectorRequest request = new CreateConnectorRequest(CONNECTOR_NAME, connConfig, null);
+        when(herder.validateConnectorNumberLimitNotExceeded()).thenReturn(true);
         assertThrows(BadRequestException.class, () -> connectorsResource.createConnector(FORWARD, NULL_HEADERS, request));
     }
 

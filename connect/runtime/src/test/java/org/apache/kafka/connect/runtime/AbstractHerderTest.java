@@ -775,6 +775,41 @@ public class AbstractHerderTest {
     }
 
     @Test
+    public void testConnectorCountMaximumNotExceededValidation() {
+        final ClusterConfigState clusterConfigStateMock = mock(ClusterConfigState.class);
+        final AbstractHerder herder = testHerder(new AllConnectorClientConfigOverridePolicy());
+        when(worker.config()).thenReturn(workerConfig);
+        when(workerConfig.getMaxConnectorsCount()).thenReturn(1);
+        when(configStore.snapshot()).thenReturn(clusterConfigStateMock);
+        when(clusterConfigStateMock.connectors()).thenReturn(Collections.emptySet());
+        assertTrue(herder.validateConnectorNumberLimitNotExceeded());
+        verify(configStore, times(1)).snapshot();
+        verify(clusterConfigStateMock, times(1)).connectors();
+    }
+
+    @Test
+    public void testConnectorCountMaximumExceededValidation() {
+        final ClusterConfigState clusterConfigStateMock = mock(ClusterConfigState.class);
+        final AbstractHerder herder = testHerder(new AllConnectorClientConfigOverridePolicy());
+        when(worker.config()).thenReturn(workerConfig);
+        when(workerConfig.getMaxConnectorsCount()).thenReturn(1);
+        when(configStore.snapshot()).thenReturn(clusterConfigStateMock);
+        when(clusterConfigStateMock.connectors()).thenReturn(Collections.singleton("one-connector-allowed"));
+        assertFalse(herder.validateConnectorNumberLimitNotExceeded());
+        verify(configStore, times(1)).snapshot();
+        verify(clusterConfigStateMock, times(1)).connectors();
+    }
+
+    @Test
+    public void testConnectorCountMaximumUnlimitedValidation() {
+        final AbstractHerder herder = testHerder(new AllConnectorClientConfigOverridePolicy());
+        when(worker.config()).thenReturn(workerConfig);
+        when(workerConfig.getMaxConnectorsCount()).thenReturn(0);
+        assertTrue(herder.validateConnectorNumberLimitNotExceeded());
+        verify(configStore, never()).snapshot();
+    }
+
+    @Test
     public void testReverseTransformConfigs() {
         // Construct a task config with constant values for TEST_KEY and TEST_KEY2
         Map<String, String> newTaskConfig = new HashMap<>();
